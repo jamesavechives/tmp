@@ -1,0 +1,36 @@
+#!/nix/store/flb9ar1xdd13c606aa4my9miy3iv4vyk-bash-4.4-p12/bin/bash
+
+if [[ "$1" == "--delete-state" ]]; then
+  echo "Deleting state-wallet-mainnet ... "
+  rm -Rf state-wallet-mainnet
+fi
+
+echo "Keeping state in state-wallet-mainnet"
+mkdir -p state-wallet-mainnet/logs
+
+echo "Launching a node connected to 'mainnet' ..."
+export LC_ALL=en_GB.UTF-8
+export LANG=en_GB.UTF-8
+if [ ! -d state-wallet-mainnet/tls ]; then
+  mkdir state-wallet-mainnet/tls/
+  /nix/store/jn350na5wcshwsixpq1wbskdp7r3x0r3-openssl-1.0.2l-bin/bin/openssl req -x509 -newkey rsa:2048 -keyout state-wallet-mainnet/tls/server.key -out state-wallet-mainnet/tls/server.cert -days 3650 -nodes -subj "/CN=localhost"
+fi
+
+
+
+/nix/store/kwcmvrsssydy9837d506ypdwmfxd02mq-cardano-sl-wallet-new-1.2.0/bin/cardano-node                                     \
+  --configuration-file /nix/store/y17wih105dyvfh5l7api206wdy9iklsa-cardano-config/configuration.yaml         \
+  --configuration-key mainnet_full     \
+  --tlscert state-wallet-mainnet/tls/server.cert           \
+  --tlskey state-wallet-mainnet/tls/server.key             \
+  --tlsca state-wallet-mainnet/tls/server.cert             \
+  --log-config /nix/store/y17wih105dyvfh5l7api206wdy9iklsa-cardano-config/log-config-connect-to-cluster.yaml \
+  --topology "/nix/store/y17wih105dyvfh5l7api206wdy9iklsa-cardano-config/topology.yaml"                      \
+  --logs-prefix "state-wallet-mainnet/logs"                               \
+  --db-path "state-wallet-mainnet/db"                                     \
+  --wallet-db-path 'state-wallet-mainnet/wallet-db'        \
+  --keyfile state-wallet-mainnet/secret.key                               \
+  --wallet-address 127.0.0.1:8090               \
+  --ekg-server 127.0.0.1:8000 --metrics                            \
+  +RTS -N2 -qg -A1m -I0 -T -RTS                                    \
+  
